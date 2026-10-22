@@ -239,64 +239,6 @@ The first antenna listed in the Measurement Set's `ANTENNA` table is selected as
 
 The `xgc-reborn_obs.yml` file is overwritten with updated observation parameters whenever `update_obs.py` runs. Keep a backup of any configuration you need to preserve for another observation.
 
-## Troubleshooting
-
-### Installation fails
-
-Check that your Python version is supported:
-
-```bash
-python --version
-```
-
-Confirm that your virtual environment is active and pip is using the expected interpreter:
-
-```bash
-which python
-python -m pip --version
-```
-
-Inspect the installation error for missing system libraries, unavailable packages, or dependency conflicts.
-
-### PrepKAT cannot be installed
-
-Ensure Git is installed and that you have SSH access to the repository:
-
-```bash
-git ls-remote git@github.com:JSKenyon/PrepKAT.git
-```
-
-If the repository requires authentication, configure your GitHub SSH key before attempting installation again.
-
-### Measurement Set not found
-
-Check that the path is correct and accessible:
-
-```bash
-ls -ld /path/to/your/observation.ms
-```
-
-### Observation configuration file is missing
-
-Run `update_obs.py` from the repository directory and verify that `xgc-reborn_obs.yml` exists.
-
-### Crystallball sky model cannot be determined
-
-Check the detected observing band and the identified calibrators. The current implementation supports only the configured calibrator combinations and observing bands described above.
-
-### Stimela execution fails
-
-Inspect the terminal output and Stimela logs. Check that the required container runtime, container images, external tools, sky model files, input data, and output directories are available.
-
-## Author
-
-**Ntsikelelo Charles**
-
-GitHub: [Ntsikelelo-Charles](https://github.com/Ntsikelelo-Charles)
-
-## License
-
-Specify the applicable software license for this repository before distributing the code for reuse.
 
 
 ## Requirements
