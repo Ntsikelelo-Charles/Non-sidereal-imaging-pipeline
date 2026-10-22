@@ -17,12 +17,30 @@ The pipeline automates observation configuration by extracting calibrator and ta
 
 ## Overview
 
-The pipeline consists of two main steps:
+The Non-Sidereal Imaging Pipeline is a Stimela-based workflow for MeerKAT radio interferometric calibration and imaging, designed to support non-sidereal observations.
 
-1. **Observation configuration:** `update_obs.py` reads metadata from the input Measurement Set and updates `xgc-reborn_obs.yml`.
-2. **Calibration and imaging:** Stimela executes the workflow defined in `xgc-reborn_recipe.yml` using the populated observation configuration.
+The pipeline combines existing radio astronomy software and recipes with automated observation configuration.
+
+Its main components are:
+
+1. **First-generation calibration (1GC):** Derived from the [xgc-reborn pipeline](https://github.com/ratt-ru/xgc-reborn.git).
+2. **Self-calibration and imaging:** Based on recipes from the [Parrot recipe repository](https://github.com/ratt-ru/parrot-stew-recipes.git).
+3. **Observation configuration:** The `update_obs.py` script reads metadata from the input Measurement Set (MS) and updates `xgc-reborn_obs.yml` with observation-specific parameters.
 
 The observation configuration script automatically identifies calibrator and target fields, determines the MeerKAT observing band, selects the appropriate Crystallball sky model, and identifies the calibration reference antenna.
+
+The workflow is orchestrated using Stimela, with observation-specific settings defined in YAML configuration files.
+
+## Acknowledgements
+
+This pipeline builds on existing software and recipes developed by the radio astronomy community.
+
+- **[xgc-reborn](https://github.com/ratt-ru/xgc-reborn.git):** Provides the basis for the first-generation calibration (1GC) component of the pipeline.
+- **[Parrot stew recipes](https://github.com/ratt-ru/parrot-stew-recipes.git):** Provides recipes used for self-calibration and imaging.
+- **[Stimela](https://github.com/caracal-pipeline/stimela):** Provides the workflow orchestration framework used to execute the pipeline.
+
+We acknowledge the developers and contributors of these projects for making their software and recipes available to the community.
+
 
 ## Requirements
 
