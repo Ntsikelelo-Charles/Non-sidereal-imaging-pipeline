@@ -7,7 +7,7 @@ requires-python = ">=3.10, <3.13"
 dependencies = [
     "stimela",
     "cult-cargo",
-    "prepkat",
+    "prepkat @ git+ssh://git@github.com/JSKenyon/PrepKAT.git",
     "python-casacore",
     "pyyaml",
 ]
@@ -22,10 +22,4 @@ build-backend = "hatchling.build"
 [tool.hatch.metadata]
 allow-direct-references = true
 
-dependencies = [
-    "stimela",
-    "cult-cargo",
-    "prepkat @ git+ssh://git@github.com/JSKenyon/PrepKAT.git",
-    "python-casacore",
-    "pyyaml",
-]
+
