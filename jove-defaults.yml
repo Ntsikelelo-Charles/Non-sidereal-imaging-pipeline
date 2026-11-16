@@ -1,0 +1,6 @@
+ms-base:
+  default: ../msdir/1595004956_sdp_l0
+source-ms:
+  default: /data2/ncharles/Projects/Jupyter_obs_UHF/xgc-reborn/1595004956_sdp_l0_secon/msdir/target.ms
+dir-out-base:
+  default: 1595004956_sdp_l0

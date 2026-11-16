@@ -1,0 +1,36 @@
+_include:
+  - jove-cabs.yml
+  - jove-prepare.yml
+  - jove-pol.yml
+jove-pol-loop:
+  name: "Jove IQUV scan loop"
+  info: "makes images with 1GC/DDCal for a series of scans, in full Stokes"
+
+  for_loop:
+    var: scan
+    over: scan-list
+    display_status: "{var}={value} {index1}/{total}"
+
+  inputs:
+    _include: jove-defaults.yml
+    scan-list:
+      dtype: List[int]
+      default:   [ 67, 69, 71, 74]
+              #4, 6, 8, 12, 14, 16, 19, 21, 23,  26, 28, 30 ,32 , 35 , 37, 39, 42, 44, 46, 49, 51,
+              # 53, 55, 58, 60, 62, 65,
+           
+  steps:
+    jove-prepare:
+      recipe: jove-prepare
+      params:
+        source-ms: =recipe.source-ms
+        ms-base: =recipe.ms-base
+        dir-out-base: =recipe.dir-out-base
+        scan: =recipe.scan
+
+    jove-pol:
+      recipe: jove-pol4
+      params:
+        ms-base: =recipe.ms-base
+        dir-out-base: =recipe.dir-out-base
+        scan: =recipe.scan

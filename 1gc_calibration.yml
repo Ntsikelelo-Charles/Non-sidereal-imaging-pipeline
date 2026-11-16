@@ -1,6 +1,6 @@
 #!/usr/bin/env -S stimela run 
 _include:    
-      - ./xgc-reborn_cabs.yml
+      - ./non_sidereal_cabs.yml
             
 opts:
 
@@ -412,96 +412,5 @@ xgc-reborn:
                   params:
                         pol: IQ
                         column: CORRECTED_DATA
-
-            mask-1:
-                  cab: breizorro
-                  params:
-                        restored-image: '{steps.image-*.prefix}-MFS-I-image.fits'
-                        outfile: '{steps.image-*.prefix}-mask.fits'
-                        threshold: 10
-                        dilate: 5
-
-            image-2:
-                  _use: lib.steps.wsclean.image_pol
-                  params:
-                        column: 'CORRECTED_DATA'
-                        fits-mask: "{steps.mask-*.outfile}"
-                        niter: 100000
-                        pol: IQ            
-
-            selfcal-1:
-                  _use: lib.steps.selfcal.direction-independent
-                  info: Perform round of direction-independent selfcal
-                  params:
-                        input_ms.data_column: "{steps.image-*.column}"
-                        output.columns: ['CORRECTED1_DATA']
-                        output.products: [corrected_data]
-                        solver.terms: [K]
-                        solver.iter_recipe: [100]
-                        dask.threads: 8 
-                        mad_flags.enable: false
-
-            image-3:
-                  _use: lib.steps.wsclean.image_pol
-                  params:
-                        column: 'CORRECTED1_DATA'
-                        fits-mask: "{steps.mask-*.outfile}"
-                        niter: 100000
-                        pol: IQ
-
-                  
-            mask-2:
-                  cab: breizorro
-                  params:
-                        restored-image: ='{steps.image-*.prefix}-MFS-I-image.fits'
-                        outfile: '{steps.image-*.prefix}-mask.fits'
-
-            upsample-3:
-                  cab: smops
-                  skip: =not recipe.upsample-channels
-                  params:
-                        ms: ='{recipe.msdir}/target.ms'
-                        input-prefix: =steps.image-*.prefix
-                        num-threads: =recipe.ncpu
-                        stokes: IQ
-                        channels-out: =recipe.upsample-channels
-                        polynomial-order: 4
-                        output-prefix: "{steps.image-*.prefix}-upsampled"
-
-            predict-3:
-                  _use: lib.steps.wsclean.predict_pol
-                  params:
-                        prefix: =IF(recipe.upsample-channels, steps.upsample-*.output-prefix, steps.image-*.prefix)
-                        nchan: =IF(recipe.upsample-channels, steps.upsample-*.channels-out, steps.image-*.nchan)
-                        pol: IQ
-
-            predict-copycol-3:
-                  skip: =not recipe.copy-model-columns
-                  cab: msutils.copycol
-                  params:
-                        msname: ='{recipe.msdir}/target.ms'
-                        fromcol: MODEL_DATA
-                        tocol: =IF(recipe.upsample-channels, 'MODEL1_{recipe.upsample-channels}_DATA', 'MODEL_DATA')
-
-            selfcal-2:
-                  _use: lib.steps.selfcal.direction-independent
-                  info: Perform round of direction-independent selfcal
-                  params:
-                        input_ms.data_column: CORRECTED1_DATA
-                        output.columns: ['CORRECTED2_DATA']
-                        solver.terms: [K]
-                        solver.iter_recipe: [100]
-                        dask.threads: 8 
-                        mad_flags.enable: false
-                        input_model.recipe: =steps.predict-copycol-*.tocol
-
-            image-4:
-                  _use: lib.steps.wsclean.image_pol
-                  params:
-                        prefix: ="{recipe.imdir}/image-{info.suffix}/image-upsampled_{info.suffix}"
-                        column: 'CORRECTED2_DATA'
-                        fits-mask: =steps.mask-*.outfile
-                        niter: 100000
-                        pol: IQUV
 
             

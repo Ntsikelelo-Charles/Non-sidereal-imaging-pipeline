@@ -6,7 +6,7 @@ import yaml
 
 
 # Fixed obs.yml filename
-OBS_FILE = "xgc-reborn_obs.yml"
+OBS_FILE = "calibration_obs.yml"
 
 
 def get_field_names(ms):

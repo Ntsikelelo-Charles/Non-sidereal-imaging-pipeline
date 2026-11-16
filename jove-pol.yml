@@ -1,0 +1,243 @@
+#!/usr/bin/env -S stimela run --last-recipe
+_include:
+  - jove-cabs.yml
+
+## this augments the standard 'opts' config section to tweak logging settings
+opts:
+  log:
+    dir: logs/log-{config.run.datetime}
+    name: log-{info.fqname}
+    nest: 2
+    symlink: log
+  backend:
+    select: singularity
+    # singularity:
+      # auto_update: true
+    rlimits:
+      NOFILE: 100000  # set high limit on number of open files
+
+## 'jove' is not a standard config section, therefore stimela exec treats this as a recipe definition
+jove-pol4:
+  name: "Jove IQUV"
+  info: "makes images with 1GC/DDCal for one scan, in full Stokes"
+
+  inputs:
+    _include: jove-defaults.yml
+    ms:
+      dtype: MS
+      default: '{recipe.ms-base}-scan{recipe.scan:02d}.ms'
+      aliases: ['*.ms']
+      must_exist: true
+    scan:
+      dtype: int
+    wstack-nwlayers-factor:
+      dtype: int  
+    suffix:
+      dtype: str
+      default: '-s{recipe.scan:02d}'
+    dd_sol_type:
+      dtype: str
+      choices: [kk, kk1, kk2, kde, kkde, kkde2, gde, g, de, kde-2slope]
+      default: kde
+    copy-model-columns:
+      dtype: bool
+      default: true
+    initial-flag-version:
+      default: init
+    dir-out:
+      default: '{recipe.dir-out-base}/s{recipe.scan:02d}'
+    stokes:
+      default: IQUV
+    pa-rotate:
+      dtype: bool
+      default: true
+    mad-flag:
+      info: enable the QuartiCal MAD residual flagger
+      dtype: bool
+      default: true
+    inner-taper:
+      enable:
+        info: enables an inner uv-cut to attenuate solar RFI
+        dtype: bool
+        default: true
+      cut: 
+        info: inner uv-cut, in lambdas
+        dtype: float
+        default: 300  
+      taper: 
+        info: additional inner tukey taper, in lambdas
+        dtype: float
+        default: 100
+    ncpu:
+      default: 64
+    upsample-channels:
+      dtype: Optional[int]
+      default: 64
+    htc_cadence:
+      dtype: int
+      default: 1
+    htc_size:
+      dtype: int
+      default: 3072
+    htc_scale:
+      dtype: str
+      default: 2.4arcsec
+
+  assign:
+    image-prefix: '{recipe.dir-out}/im{info.suffix}/im{info.suffix}{recipe.suffix}'  # prefix for image names at each step
+    log.dir: '{recipe.dir-out}/logs/log-{config.run.datetime}'          # put logs into output dir
+    # some more directory assignments
+    dirs:
+      temp: "{config.run.env.HOME}/tmp"   # temp files go here
+    
+    # prefix used for filenames if upsampling is in effect
+    upsample-suffix: =IF(recipe.upsample-channels, "-us{recipe.upsample-channels}", "")
+    image-upsample-prefix: '{recipe.dir-out}/im{info.suffix}{recipe.upsample-suffix}/im{info.suffix}{recipe.upsample-suffix}{recipe.suffix}'  
+    
+    # work out baseline calibration uv-cut
+    # this is the total imaging inner taper in metres (0.33 is wavelength at 900 MHz)
+    imaging-uv-cut: 
+      =IF(recipe.inner-taper.enable, (recipe.inner-taper.cut + recipe.inner-taper.taper)*0.33, 0)
+    # apply baseline uv-cut of at least 100m, or equal to the imaging uv-cut
+    baseline-cal-cut: =MAX(recipe.imaging-uv-cut, 100)
+    
+  steps:
+    flagreset:
+      info: revert to initial flag version at start of processing
+      cab: casa.flagman
+      params:
+        mode: restore
+        versionname: =recipe.initial-flag-version
+      skip: true
+
+    derotate-1:
+      _use: lib.steps.cubical.delay
+      params:
+        madmax.enable: 0
+        madmax.residuals: 0
+        model.list: 1
+        out.mode: ac
+        data.column: DATA
+        out.column: CORRECTED_DATA
+        log.verbose: pa_machine=2
+        dist.max-chunks: 4
+        dist.nworker: 5
+   
+    image-1:
+      _use: lib.steps.wsclean.image_pol
+      params:
+        pol: IQ
+        column: =IF(recipe.pa-rotate, steps.derotate-1.out.column, "DATA")
+       
+
+    mask-1:
+      cab: breizorro
+      params:
+        restored-image: '{steps.image-*.prefix}-MFS-I-image.fits'
+        outfile: '{steps.image-*.prefix}-mask.fits'
+        threshold: 10
+        dilate: 5
+
+    image-2:
+      _use: lib.steps.wsclean.image_pol
+      params:
+        column: =IF(recipe.pa-rotate, steps.derotate-1.out.column, "DATA")
+        fits-mask: "{steps.mask-*.outfile}"
+        niter: 100000
+        pol: IQ    
+
+    selfcal-1:
+      _use: lib.steps.cubical.delay
+      params:
+        data.column: =IF(recipe.pa-rotate, steps.derotate-1.out.column, "DATA")
+        model.list: MODEL_DATA
+        dist.max-chunks: 4
+        dist.nworker: 5
+
+    image-3:
+      _use: lib.steps.wsclean.image_pol
+      params:
+        column: "{steps.selfcal-*.out.column}"
+        fits-mask: "{steps.mask-*.outfile}"
+        niter: 100000
+        pol: IQ  
+
+    mask-2:
+      cab: breizorro
+      params:
+        restored-image: '{steps.image-*.prefix}-MFS-I-image.fits'
+        outfile: '{steps.image-*.prefix}-mask.fits'
+        
+
+    image-4:
+      _use: lib.steps.wsclean.image_pol
+      params:
+        column: "{steps.selfcal-*.out.column}"
+        fits-mask: "{steps.mask-*.outfile}"
+        niter: 100000
+        pol: IQUV  
+
+    upsample-3:
+      cab: smops
+      params:
+        ms: =recipe.ms
+        input-prefix: =steps.image-*.prefix
+        num-threads: =recipe.ncpu
+        stokes: IQUV
+        channels-out: =recipe.upsample-channels
+        polynomial-order: 4
+        output-prefix: "{steps.image-*.prefix}-upsampled"
+
+    predict-3:
+      _use: lib.steps.wsclean.predict_pol
+      params:
+        prefix: =IF(recipe.upsample-channels, steps.upsample-*.output-prefix, steps.image-*.prefix)
+        nchan: =IF(recipe.upsample-channels, steps.upsample-*.channels-out, steps.image-*.nchan)
+      
+
+    predict-copycol-3:
+      cab: msutils.copycol
+      params:
+        msname: =recipe.ms
+        fromcol: MODEL_DATA
+        tocol: =IF(recipe.upsample-channels, 'MODEL{info.suffix}_{recipe.upsample-channels}_DATA', 'MODEL{info.suffix}_DATA')
+
+    selfcal-3:
+      _use: lib.steps.cubical.delay
+      params:
+        model.list: =steps.predict-copycol-*.tocol
+        dist.max-chunks: 4
+        dist.nworker: 5
+
+    image-5:
+      _use: lib.steps.wsclean.image_pol
+      params:
+        prefix: =recipe.image-upsample-prefix
+        column: =steps.selfcal-*.out.column
+        fits-mask: =steps.mask-*.outfile
+        niter: 10000
+        pol: IQUV
+
+    # mask-3:
+    #   cab: breizorro
+    #   params:
+    #     restored-image: ='{steps.image-*.prefix}-MFS-I-image.fits'
+    #     outfile: '{steps.image-*.prefix}-mask.fits'    
+
+    # image-6:
+    #   _use: lib.steps.wsclean.image_pol
+    #   params:
+    #     prefix: =recipe.image-upsample-prefix
+    #     column: =steps.selfcal-*.out.column
+    #     fits-mask: =steps.mask-*.outfile
+    #     niter: 100000
+    #     pol: IQUV    
+
+    
+   
+    
+
+ 
+
+
+    
