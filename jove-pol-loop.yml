@@ -15,7 +15,7 @@ jove-pol-loop:
     _include: jove-defaults.yml
     scan-list:
       dtype: List[int]
-      default:   [ 67, 69, 71, 74]
+      default:   [ 4, 6]
               #4, 6, 8, 12, 14, 16, 19, 21, 23,  26, 28, 30 ,32 , 35 , 37, 39, 42, 44, 46, 49, 51,
               # 53, 55, 58, 60, 62, 65,
            

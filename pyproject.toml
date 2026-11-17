@@ -1,3 +1,4 @@
+
 [project]
 name = "non-sidereal-imaging-pipeline"
 version = "0.1.0"
@@ -5,8 +6,8 @@ description = "MeerKAT calibration and non-sidereal imaging pipeline."
 readme = "README.md"
 requires-python = ">=3.10, <3.13"
 dependencies = [
-    "stimela",
-    "cult-cargo",
+    "stimela==2.1.4rc3",
+    "cult-cargo @ git+https://github.com/ratt-ru/cult-cargo.git@r0.2.1rc5",
     "prepkat @ git+ssh://git@github.com/JSKenyon/PrepKAT.git",
     "python-casacore",
     "pyyaml",
@@ -22,4 +23,14 @@ build-backend = "hatchling.build"
 [tool.hatch.metadata]
 allow-direct-references = true
 
-
+[tool.hatch.build.targets.wheel]
+bypass-selection = true
+only-include = [
+    "README.md",
+    "*.yml",
+    "*.yaml",
+    "*.py",
+    "defaults",
+    "data",
+    "library",
+]

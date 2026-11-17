@@ -1,12 +1,12 @@
 obs:
   default:
-    ms_path: /net/stevie/data5/oms/Jove-data/1595004956_sdp_l0.ms
+    ms_path: /net/sinatra/vault-ike/oms/MeerKAT-data/Jove/1596729658_sdp_l0.ms
     ms_data-ID: OutputDir
     bpcal-field: J1939-6342
     fcal-field: J1939-6342
-    gcal-field: J1605-1734
+    gcal-field: J1923-2104 
     xcal-field: J1331+3030
-    target-field: HD142184
+    target-field: Jupiter
     breizorro_dilate: 2
     breizorro_boxsize: 50
     breizorro_threshold: 6.5

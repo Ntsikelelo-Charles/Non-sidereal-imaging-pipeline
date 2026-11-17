@@ -32,7 +32,7 @@ xgc-reborn:
             log.dir: '{recipe.logdir}/log-{config.run.datetime}'
                   
       assign_based_on:
-            _include: ./xgc-reborn_obs.yml
+            _include: ./calibration_obs.yml
             
       
             
@@ -399,7 +399,7 @@ xgc-reborn:
                   _use: lib.steps.calibration.applycal.applycal2target
                   info: Apply the  calibration solution to target field 
                   params: 
-                        parang: true
+                        parang: false
                         
             flag-target-corr:
                   _use: lib.steps.flagdata.flag-tfcrop.corrected.target
@@ -410,7 +410,7 @@ xgc-reborn:
             image-1:
                   _use: lib.steps.wsclean.image_pol
                   params:
-                        pol: IQ
+                        pol: IQUV
                         column: CORRECTED_DATA
 
             
